@@ -1,0 +1,20 @@
+{
+  "name": "Letáky",
+  "short_name": "Letáky",
+  "description": "Akcie a letáky z obchodov na jednom mieste",
+  "lang": "sk",
+  "dir": "ltr",
+  "start_url": "/letaky/?source=pwa",
+  "scope": "/letaky/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#1976d2",
+  "icons": [
+    {
+      "src": "letaky.png",
+      "sizes": "1024x1024",
+      "type": "image/png"
+    }
+  ]
+}
