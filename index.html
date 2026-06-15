@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="sk">
 <head>
@@ -1101,31 +1100,7 @@
   </div>
   <div class="sidenav-body">
   <div class="sidenav-section">
-    <div id="letaky-store-list"><!-- naplnené z workera (KNIHA / PDF letáky) --></div>
-  </div>
-  <div class="sidenav-section">
-    <div class="sidenav-section-title">Listovacie letáky</div>
-    <div class="sidenav-store">
-      <div class="sidenav-store-name"><span class="store-dot" style="background:#ee1c2e"></span>Tesco</div>
-      <div id="tesco-btns"></div>
-      <button class="sidenav-btn" onclick="openLetak('https://www.tesco.sk/akciove-ponuky/letaky-a-katalogy/')">Všetky letáky Tesco</button>
-    </div>
-    <div class="sidenav-store">
-      <div class="sidenav-store-name"><span class="store-dot" style="background:#d3000d"></span>Kaufland</div>
-      <div id="kaufland-btns"></div>
-      <button class="sidenav-btn" onclick="openLetak('https://predajne.kaufland.sk/aktualna-ponuka/letak.html')">Všetky letáky Kaufland</button>
-    </div>
-    <div class="sidenav-store">
-      <div class="sidenav-store-name"><span class="store-dot" style="background:#0057a8"></span>Lidl</div>
-      <div id="lidl-btns"></div>
-      <button class="sidenav-btn" onclick="openLetak('https://www.lidl.sk/c/online-letak/s10008489')">Všetky letáky Lidl</button>
-    </div>
-    <div class="sidenav-store">
-      <div class="sidenav-store-name"><span class="store-dot" style="background:#a51812"></span>Billa</div>
-      <button class="sidenav-btn" onclick="openLetak('https://www.billa.sk/letaky-a-akcie/aktualny-letak')">Aktuálny leták</button>
-      <button class="sidenav-btn" onclick="openLetak('https://www.billa.sk/letaky-a-akcie/buduci-letak')">Budúci leták</button>
-      <button class="sidenav-btn" onclick="openLetak('https://www.billa.sk/letaky-a-akcie/billa-bonus-letak')">Billa bonus leták</button>
-    </div>
+    <div id="letaky-store-list"><!-- naplnené z workera (brožúry / PDF letáky) --></div>
   </div>
   </div><!-- /sidenav-body -->
 </nav>
@@ -1186,9 +1161,9 @@
 <div class="pdf-viewer" id="pdfViewer">
   <div class="pdf-viewer-bar">
     <span class="pdf-viewer-title" id="pdfViewerTitle">Leták</span>
-    <button class="pdf-nav-btn" id="pdfPrevBtn" disabled>◀ Pred.</button>
+    <button class="pdf-nav-btn" id="pdfPrevBtn" disabled>◀</button>
     <span class="pdf-viewer-bar pdf-page-info" id="pdfPageInfo" style="background:none;border:none;padding:0;font-family:'Roboto Mono',monospace;font-size:13px;color:var(--on-surface-var);white-space:nowrap;flex-shrink:0"></span>
-    <button class="pdf-nav-btn" id="pdfNextBtn" disabled>Ďalej ▶</button>
+    <button class="pdf-nav-btn" id="pdfNextBtn" disabled>▶</button>
     <div class="pdf-zoom-row">
       <button class="pdf-nav-btn" id="pdfZoomOut" style="padding:9px 13px">−</button>
       <span class="pdf-zoom-label" id="pdfZoomLabel">100%</span>
@@ -1588,16 +1563,25 @@ function openLetak(url, title){
     const wrapper = wrappers[pageNum - 1];
     if(!wrapper) return;
 
+    /* Use devicePixelRatio for sharp rendering on HiDPI/Retina screens */
+    const dpr = window.devicePixelRatio || 1;
+
     /* Replace placeholder with canvas */
     wrapper.innerHTML = '';
     const canvas = document.createElement('canvas');
-    canvas.width  = viewport.width;
-    canvas.height = viewport.height;
+    /* Physical pixels = CSS pixels × dpr */
+    canvas.width  = Math.round(viewport.width  * dpr);
+    canvas.height = Math.round(viewport.height * dpr);
+    /* CSS size stays at logical pixels so layout is unchanged */
+    canvas.style.width  = viewport.width  + 'px';
+    canvas.style.height = viewport.height + 'px';
     wrapper.style.width  = viewport.width  + 'px';
     wrapper.style.height = viewport.height + 'px';
     wrapper.appendChild(canvas);
 
     const ctx = canvas.getContext('2d');
+    /* Scale context so PDF.js draws at full physical resolution */
+    ctx.scale(dpr, dpr);
     await page.render({ canvasContext: ctx, viewport }).promise;
   }
 
@@ -1680,6 +1664,15 @@ function openLetak(url, title){
     window.pdfjsLib.GlobalWorkerOptions.workerSrc = `${PDFJS_CDN}/pdf.worker.min.js`;
   }
 
+  /* Calculate scale so the PDF page fits the viewer width with some padding */
+  async function calcFitScale(pdfDocument){
+    const page = await pdfDocument.getPage(1);
+    const baseVp = page.getViewport({ scale: 1 });
+    const availableWidth = canvasScroll.clientWidth || window.innerWidth;
+    const padding = 32; /* 16px each side */
+    return Math.max(0.5, (availableWidth - padding) / baseVp.width);
+  }
+
   window.openPdfViewer = async function(url, title){
     titleEl.textContent = title || 'Leták';
     showStatus('📄', 'Načítavam leták', 'Príprava', false);
@@ -1694,7 +1687,7 @@ function openLetak(url, title){
     zoomLabel.textContent = '150%';
 
     try{
-      showStatus('📦', 'Načítavam PDF.js', 'Jeden moment…', false);
+      showStatus('📦', 'Načítavam PDF.js', 'Moment', false);
       await loadPdfjsIfNeeded();
 
       showStatus('📥', 'Sťahujem leták', 'Chvíľu strpenia…', false);
@@ -1709,6 +1702,10 @@ function openLetak(url, title){
 
       showStatus('🔍', 'Spracúvam strany', 'Pripravujem náhľady…', false);
       pdfDoc = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+      /* Auto-fit scale to viewer width — important on mobile */
+      scale = await calcFitScale(pdfDoc);
+      zoomLabel.textContent = Math.round(scale * 100) + '%';
 
       await buildPageWrappers();
       hideStatus();
@@ -1740,6 +1737,38 @@ function openLetak(url, title){
   /* Page nav */
   prevBtn.addEventListener('click', () => { if(currentPage > 1) scrollToPage(currentPage - 1); });
   nextBtn.addEventListener('click', () => { if(pdfDoc && currentPage < pdfDoc.numPages) scrollToPage(currentPage + 1); });
+
+  /* ── Pinch-to-zoom (touch) ── */
+  let pinchStartDist = null;
+  let pinchStartScale = 1;
+  canvasScroll.addEventListener('touchstart', (e) => {
+    if(e.touches.length === 2){
+      pinchStartDist = Math.hypot(
+        e.touches[1].clientX - e.touches[0].clientX,
+        e.touches[1].clientY - e.touches[0].clientY
+      );
+      pinchStartScale = scale;
+      e.preventDefault();
+    }
+  }, { passive: false });
+  canvasScroll.addEventListener('touchmove', (e) => {
+    if(e.touches.length === 2 && pinchStartDist !== null){
+      e.preventDefault();
+      const dist = Math.hypot(
+        e.touches[1].clientX - e.touches[0].clientX,
+        e.touches[1].clientY - e.touches[0].clientY
+      );
+      const ratio = dist / pinchStartDist;
+      scale = Math.min(3, Math.max(0.5, +(pinchStartScale * ratio).toFixed(2)));
+      zoomLabel.textContent = Math.round(scale * 100) + '%';
+    }
+  }, { passive: false });
+  canvasScroll.addEventListener('touchend', (e) => {
+    if(pinchStartDist !== null && e.touches.length < 2){
+      pinchStartDist = null;
+      applyZoom();
+    }
+  }, { passive: true });
 
   closeBtn.addEventListener('click', closeViewer);
   function closeViewer(){
@@ -1780,9 +1809,11 @@ function addBtn(containerId, label, url){
   document.getElementById(containerId).appendChild(b);
 }
 
-// ───────── KNIHA / PDF Letáky (z workera) ─────────
+// ───────── KNIHA / PDF Letáky (z workera + Schwarz API pre Kaufland/Lidl) ─────────
 (function(){
-  const LETAKY_API = 'https://letaky.2022vianoce.workers.dev/';
+  const LETAKY_API  = 'https://letaky.2022vianoce.workers.dev/';
+  const SCHWARZ_API = 'https://endpoints.leaflets.schwarz/v4/flyer';
+
   const STORE_DOTS = {
     tesco: '#ee1c2e', kaufland: '#d3000d', lidl: '#0057a8', billa: '#a51812',
     coop: '#1a7a3c', metro: '#003a70', fresh: '#ff8a00', koruna: '#7a1f1f',
@@ -1801,101 +1832,14 @@ function addBtn(containerId, label, url){
     const [y,m,d] = dateStr.split('-');
     return `${d}.${m}.`;
   }
-
-  function shopDot(shop){
-    return STORE_DOTS[shop] || '#8B5000';
-  }
-
-  function shopLabel(shop){
-    return STORE_LABELS[shop] || (shop.charAt(0).toUpperCase() + shop.slice(1));
-  }
-
-  async function loadKniha(){
-    const container = document.getElementById('letaky-store-list');
-    try{
-      const res = await fetch(LETAKY_API);
-      if(!res.ok) throw new Error('HTTP ' + res.status);
-      const data = await res.json();
-      const leaflets = Array.isArray(data) ? data : (data.leaflets || []);
-
-      // filtrovať expirované letáky
-      const today = new Date(); today.setHours(0,0,0,0);
-      const active = leaflets.filter(l => !l.validTo || new Date(l.validTo) >= today);
-
-      // group by shop
-      const byShop = {};
-      active.forEach(l => {
-        if(!byShop[l.shop]) byShop[l.shop] = [];
-        byShop[l.shop].push(l);
-      });
-
-      const SHOP_ORDER = ['kaufland','lidl','tesco','billa','coop','terno'];
-      const sortedShops = Object.keys(byShop).sort((a, b) => {
-        const ai = SHOP_ORDER.indexOf(a.toLowerCase());
-        const bi = SHOP_ORDER.indexOf(b.toLowerCase());
-        if(ai !== -1 && bi !== -1) return ai - bi;
-        if(ai !== -1) return -1;
-        if(bi !== -1) return 1;
-        return a.localeCompare(b);
-      });
-
-      container.innerHTML = '';
-      sortedShops.forEach(shop => {
-        const storeDiv = document.createElement('div');
-        storeDiv.className = 'sidenav-store';
-
-        const nameDiv = document.createElement('div');
-        nameDiv.className = 'sidenav-store-name';
-        nameDiv.innerHTML = `<span class="store-dot" style="background:${shopDot(shop)}"></span>${shopLabel(shop)}`;
-        storeDiv.appendChild(nameDiv);
-
-        byShop[shop].forEach(l => {
-          const btn = document.createElement('button');
-          btn.className = 'sidenav-btn';
-          btn.textContent = `Leták (${fmtShortYMD(l.validFrom)} – ${fmtShortYMD(l.validTo)})`;
-          btn.onclick = () => openLetak(l.pdfUrl, `${shopLabel(shop)} (${fmtShortYMD(l.validFrom)} – ${fmtShortYMD(l.validTo)})`);
-          storeDiv.appendChild(btn);
-        });
-
-        container.appendChild(storeDiv);
-      });
-    }catch(err){
-      container.innerHTML = `<div style="padding:10px 6px;font-size:13px;color:var(--on-surface-var)">Letáky sa nepodarilo načítať (${escapeHtmlSafe(err.message)})</div>`;
-    }
-  }
-
+  function shopDot(shop){ return STORE_DOTS[shop] || '#8B5000'; }
+  function shopLabel(shop){ return STORE_LABELS[shop] || (shop.charAt(0).toUpperCase() + shop.slice(1)); }
   function escapeHtmlSafe(s){
     return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
 
-  loadKniha();
-})();
+  function padZ2(n){ return String(n).padStart(2,'0'); }
 
-
-(function(){
-  const today = new Date();
-  const day = today.getDay();
-  function getLastWednesday(date){
-    const d = new Date(date);
-    d.setDate(d.getDate() - ((d.getDay() + 4) % 7));
-    return d;
-  }
-  function fmtYMD(d){ return `${d.getFullYear()}-${padZ(d.getMonth()+1)}-${padZ(d.getDate())}`; }
-  function tescoUrl(type, date){ return `https://www.tesco.sk/akciove-ponuky/letaky-a-katalogy/${type}/tesco-letak-${fmtYMD(date)}/1/`; }
-  const curWed = getLastWednesday(today);
-  const nextWed = new Date(curWed); nextWed.setDate(curWed.getDate() + 7);
-  const showNext = (day === 1 || day === 2);
-  ['hypermarkety','supermarkety'].forEach(type => {
-    const label = type === 'hypermarkety' ? 'Hypermarket' : 'Supermarket';
-    addBtn('tesco-btns', `${label} – aktuálny (${fmtRange(curWed,6)})`, tescoUrl(type, curWed));
-    if(showNext) addBtn('tesco-btns', `${label} – budúci (${fmtRange(nextWed,6)})`, tescoUrl(type, nextWed));
-  });
-})();
-
-// ───────── KAUFLAND ─────────
-(function(){
-  const today = new Date();
-  const dow = today.getDay();
   function getWeekNumber(date){
     const t = new Date(date.valueOf());
     const dn = (date.getDay()+6)%7;
@@ -1903,50 +1847,244 @@ function addBtn(containerId, label, url){
     const ft = new Date(t.getFullYear(),0,4);
     return 1+Math.round((t-ft)/(7*24*60*60*1000));
   }
-  function getMondayOfWeek(week,year){
-    const jan1 = new Date(year,0,1);
-    const jan1Day = jan1.getDay()||7;
-    return new Date(year,0,1+(week-1)*7+(1-jan1Day));
-  }
-  const year = today.getFullYear();
-  const curWeek = getWeekNumber(today);
-  const prevWeek = curWeek > 1 ? curWeek-1 : 52;
-  const curMon = getMondayOfWeek(curWeek, year);
-  const prevMon = getMondayOfWeek(prevWeek, year);
-  const oldFrom = new Date(prevMon); oldFrom.setDate(oldFrom.getDate()+3);
-  const oldTo   = new Date(curMon);  oldTo.setDate(oldTo.getDate()+2);
-  const newFrom = new Date(curMon);  newFrom.setDate(newFrom.getDate()+3);
-  const newTo   = new Date(newFrom); newTo.setDate(newTo.getDate()+6);
-  const wPrev = String(prevWeek).padStart(2,'0');
-  const wCur  = String(curWeek).padStart(2,'0');
-  const flyerOld = `https://leaflets.kaufland.com/sk-SK/SK_sk_KDZ_1020_SK${wPrev}-LFT/view/flyer/page/1`;
-  const flyerNew = `https://leaflets.kaufland.com/sk-SK/SK_sk_KDZ_1020_SK${wCur}-LFT/view/flyer/page/1`;
-  if(dow >= 4 || dow === 0){
-    addBtn('kaufland-btns', `Aktuálny leták (${fmtShort(newFrom)} – ${fmtShort(newTo)})`, flyerNew);
-  } else {
-    addBtn('kaufland-btns', `Aktuálny leták (${fmtShort(oldFrom)} – ${fmtShort(oldTo)})`, flyerOld);
-    if(dow === 2 || dow === 3) addBtn('kaufland-btns', `Nový leták (${fmtShort(newFrom)} – ${fmtShort(newTo)})`, flyerNew);
-  }
-})();
 
-// ───────── LIDL ─────────
-(function(){
-  const today = new Date();
-  const dow = today.getDay();
-  function getMonday(offsetDays){
-    const d = new Date(today);
+  function getMondayOffset(offsetDays){
+    const d = new Date();
     const diff = (d.getDay()+6)%7;
     d.setDate(d.getDate()-diff+offsetDays);
     return d;
   }
-  const curMon  = getMonday(0);
-  const nextMon = getMonday(7);
-  function lidlUrl(date){
-    return `https://www.lidl.sk/l/sk/letak/online-letak-platny-od-${fmtDash(date)}/view/flyer/page/1`;
+
+  function fmtDashDate(d){
+    return `${padZ2(d.getDate())}-${padZ2(d.getMonth()+1)}-${d.getFullYear()}`;
   }
-  addBtn('lidl-btns', `Aktuálny leták (od ${fmtShort(curMon)})`, lidlUrl(curMon));
-  const showNext = (dow === 5 || dow === 6 || dow === 0);
-  if(showNext) addBtn('lidl-btns', `Budúci leták (od ${fmtShort(nextMon)})`, lidlUrl(nextMon));
+
+  // Fetch jeden Schwarz flyer podľa identifikatora, vráti objekt alebo null
+  async function fetchSchwarzFlyer(identifier, regionId){
+    const url = `${SCHWARZ_API}?flyer_identifier=${encodeURIComponent(identifier)}&region_id=${regionId}&region_code=${regionId}`;
+    const res = await fetch(url);
+    if(!res.ok) return null;
+    const data = await res.json();
+    if(!data.success || !data.flyer) return null;
+    return data.flyer;
+  }
+
+  // Načíta všetky aktívne Kaufland letáky zo Schwarz API
+  async function fetchKauflandLeaflets(){
+    const today = new Date(); today.setHours(0,0,0,0);
+    const curWeek = getWeekNumber(today);
+    const prevWeek = curWeek > 1 ? curWeek-1 : 52;
+    const leaflets = [];
+
+    for(const w of [curWeek, prevWeek]){
+      const id = `SK_sk_KDZ_1020_SK${padZ2(w)}-LFT`;
+      try{
+        const f = await fetchSchwarzFlyer(id, '1020');
+        if(!f) continue;
+        const endDate = new Date(f.endDate);
+        if(endDate < today) continue; // expirovaný
+
+        // Hlavný leták (KDZ)
+        leaflets.push({ shop:'kaufland', title: f.title, validFrom: f.offerStartDate, validTo: f.endDate, pdfUrl: f.pdfUrl, flyerUrl: f.flyerUrlAbsolute || f.homeUrl });
+
+        // Príbuzné letáky (napr. CL2) — odfiltruj letáky s platnosťou > 30 dní (napr. pol roka)
+        if(Array.isArray(f.relatedFlyers)){
+          for(const rf of f.relatedFlyers){
+            const rfEnd = rf.endDate ? new Date(rf.endDate) : null;
+            if(rfEnd && rfEnd < today) continue;
+            // Preskočiť letáky s platnosťou dlhšou ako 30 dní
+            const rfStart = rf.startDate ? new Date(rf.startDate) : today;
+            if(rfEnd && (rfEnd - rfStart) > 30 * 24 * 60 * 60 * 1000) continue;
+            const rfTitle = 'SPOTREBNÝ TOVAR ' + (rf.title || '');
+            leaflets.push({ shop:'kaufland', title: rfTitle, validFrom: null, validTo: rf.endDate, pdfUrl: rf.pdfUrl, flyerUrl: rf.url });
+          }
+        }
+        break; // máme aktuálny, ďalej neideme
+      }catch(e){ /* skúsime ďalší */ }
+    }
+    return leaflets;
+  }
+
+  // Načíta Lidl letáky zo Schwarz API (aktuálny + budúci ak existuje)
+  async function fetchLidlLeaflets(){
+    const today = new Date(); today.setHours(0,0,0,0);
+    const leaflets = [];
+    for(const offsetDays of [0, 7]){
+      const mon = getMondayOffset(offsetDays);
+      const id = `online-letak-platny-od-${fmtDashDate(mon)}`;
+      try{
+        const f = await fetchSchwarzFlyer(id, '0');
+        if(!f) continue;
+        const endDate = new Date(f.endDate);
+        if(endDate < today) continue;
+        leaflets.push({ shop:'lidl', title: f.title, validFrom: f.offerStartDate, validTo: f.endDate, pdfUrl: f.pdfUrl, flyerUrl: f.flyerUrlAbsolute || f.homeUrl });
+      }catch(e){ /* skúsime ďalší */ }
+    }
+    return leaflets;
+  }
+
+  function renderStoreBlock(container, shop, items){
+    const storeDiv = document.createElement('div');
+    storeDiv.className = 'sidenav-store';
+    const nameDiv = document.createElement('div');
+    nameDiv.className = 'sidenav-store-name';
+    nameDiv.innerHTML = `<span class="store-dot" style="background:${shopDot(shop)}"></span>${shopLabel(shop)}`;
+    storeDiv.appendChild(nameDiv);
+
+    items.forEach(l => {
+      // Tlačidlo pre PDF (hore)
+      if(l.pdfUrl){
+        const pdfBtn = document.createElement('button');
+        pdfBtn.className = 'sidenav-btn';
+        pdfBtn.textContent = `Leták ${l.title || (fmtShortYMD(l.validFrom) + ' – ' + fmtShortYMD(l.validTo))}`;
+        pdfBtn.onclick = () => openLetak(l.pdfUrl, `${shopLabel(shop)} – ${l.title || ''}`);
+        storeDiv.appendChild(pdfBtn);
+      }
+      // Tlačidlo pre listovacie zobrazenie (dole)
+      if(l.flyerUrl){
+        const btn = document.createElement('button');
+        btn.className = 'sidenav-btn';
+        btn.textContent = `Listovací ${l.title || ''}`;
+        btn.onclick = () => openLetak(l.flyerUrl, `${shopLabel(shop)} – ${l.title || ''}`);
+        storeDiv.appendChild(btn);
+      }
+    });
+
+    container.appendChild(storeDiv);
+  }
+
+  async function loadKniha(){
+    const container = document.getElementById('letaky-store-list');
+    const today = new Date(); today.setHours(0,0,0,0);
+
+    // Spusti všetko paralelne
+    const [workerResult, kauflandLeaflets, lidlLeaflets] = await Promise.allSettled([
+      // Worker pre ostatné obchody
+      fetch(LETAKY_API).then(r => r.ok ? r.json() : Promise.reject('HTTP ' + r.status)),
+      fetchKauflandLeaflets(),
+      fetchLidlLeaflets()
+    ]);
+
+    // Spracuj letáky z workera (všetko okrem kaufland a lidl)
+    let otherLeaflets = [];
+    if(workerResult.status === 'fulfilled'){
+      const data = workerResult.value;
+      const raw = Array.isArray(data) ? data : (data.leaflets || []);
+      otherLeaflets = raw.filter(l => {
+        const s = (l.shop||'').toLowerCase();
+        if(s === 'kaufland' || s === 'lidl') return false; // tieto bereme zo Schwarz API
+        if(!l.validTo || new Date(l.validTo) >= today) return true;
+        return false;
+      });
+    }
+
+    // Zostavíme byShop mapu: kaufland a lidl zo Schwarz API, ostatné z workera
+    const byShop = {};
+
+    const klResult = kauflandLeaflets.status === 'fulfilled' ? kauflandLeaflets.value : [];
+    const llResult = lidlLeaflets.status === 'fulfilled' ? lidlLeaflets.value : [];
+
+    if(klResult.length) byShop['kaufland'] = klResult;
+    if(llResult.length) byShop['lidl'] = llResult;
+
+    // Ostatné obchody z workera
+    otherLeaflets.forEach(l => {
+      const s = (l.shop||'unknown').toLowerCase();
+      if(!byShop[s]) byShop[s] = [];
+      // Worker formát: nemá flyerUrl, iba pdfUrl
+      byShop[s].push({ shop: s, title: null, validFrom: l.validFrom, validTo: l.validTo, pdfUrl: l.pdfUrl, flyerUrl: null });
+    });
+
+    const SHOP_ORDER = ['kaufland','lidl','tesco','billa','coop','terno'];
+    const sortedShops = Object.keys(byShop).sort((a, b) => {
+      const ai = SHOP_ORDER.indexOf(a); const bi = SHOP_ORDER.indexOf(b);
+      if(ai !== -1 && bi !== -1) return ai - bi;
+      if(ai !== -1) return -1; if(bi !== -1) return 1;
+      return a.localeCompare(b);
+    });
+
+    container.innerHTML = '';
+
+    if(sortedShops.length === 0){
+      container.innerHTML = `<div style="padding:10px 6px;font-size:13px;color:var(--on-surface-var)">Žiadne letáky</div>`;
+      return;
+    }
+
+    sortedShops.forEach(shop => {
+      const items = byShop[shop];
+      if(!items || items.length === 0) return;
+
+      // Ostatné obchody z workera
+      if(!items[0].flyerUrl && items[0].flyerUrl !== undefined && items[0].shop !== 'kaufland' && items[0].shop !== 'lidl'){
+        const storeDiv = document.createElement('div');
+        storeDiv.className = 'sidenav-store';
+        const nameDiv = document.createElement('div');
+        nameDiv.className = 'sidenav-store-name';
+        nameDiv.innerHTML = `<span class="store-dot" style="background:${shopDot(shop)}"></span>${shopLabel(shop)}`;
+        storeDiv.appendChild(nameDiv);
+        items.forEach(l => {
+          const btn = document.createElement('button');
+          btn.className = 'sidenav-btn';
+          btn.textContent = `Leták (${fmtShortYMD(l.validFrom)} – ${fmtShortYMD(l.validTo)})`;
+          btn.onclick = () => openLetak(l.pdfUrl, `${shopLabel(shop)} (${fmtShortYMD(l.validFrom)} – ${fmtShortYMD(l.validTo)})`);
+          storeDiv.appendChild(btn);
+        });
+        // Tesco: listovacie letáky — len hypermarkety, s vypočítaným dátumom
+        if(shop === 'tesco'){
+          (function(){
+            const now = new Date();
+            const day = now.getDay();
+            function getLastWed(d){
+              const r = new Date(d);
+              r.setDate(r.getDate() - ((r.getDay() + 4) % 7));
+              return r;
+            }
+            function fmtYMD(d){ return `${d.getFullYear()}-${padZ2(d.getMonth()+1)}-${padZ2(d.getDate())}`; }
+            function fmtRange(from, days){
+              const to = new Date(from); to.setDate(from.getDate() + days);
+              return `${padZ2(from.getDate())}.${padZ2(from.getMonth()+1)}. – ${padZ2(to.getDate())}.${padZ2(to.getMonth()+1)}.`;
+            }
+            const curWed = getLastWed(now);
+            const nextWed = new Date(curWed); nextWed.setDate(curWed.getDate() + 7);
+            const showNext = (day === 1 || day === 2);
+            const entries = [
+              [`Listovací – Aktuálny`, `https://www.tesco.sk/akciove-ponuky/letaky-a-katalogy/hypermarkety/tesco-letak-${fmtYMD(curWed)}/1/`],
+            ];
+            if(showNext) entries.push([
+              `Listovací – Nový`, `https://www.tesco.sk/akciove-ponuky/letaky-a-katalogy/hypermarkety/tesco-letak-${fmtYMD(nextWed)}/1/`
+            ]);
+            entries.forEach(([label, url]) => {
+              const b = document.createElement('button');
+              b.className = 'sidenav-btn';
+              b.textContent = label;
+              b.onclick = () => openLetak(url, `Tesco – ${label}`);
+              storeDiv.appendChild(b);
+            });
+          })();
+        }
+        // Billa: pridaj listovacie letáky
+        if(shop === 'billa'){
+          [
+            ['Listovací – aktuálny leták',     'https://www.billa.sk/letaky-a-akcie/aktualny-letak'],
+            ['Listovací – budúci leták',        'https://www.billa.sk/letaky-a-akcie/buduci-letak'],
+            ['Listovací – Billa bonus leták',   'https://www.billa.sk/letaky-a-akcie/billa-bonus-letak'],
+          ].forEach(([label, url]) => {
+            const b = document.createElement('button');
+            b.className = 'sidenav-btn';
+            b.textContent = label;
+            b.onclick = () => openLetak(url, label);
+            storeDiv.appendChild(b);
+          });
+        }
+        container.appendChild(storeDiv);
+      } else {
+        renderStoreBlock(container, shop, items);
+      }
+    });
+  }
+
+  loadKniha();
 })();
+
 </script>
 </html>
