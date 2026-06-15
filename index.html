@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="sk">
 <head>
@@ -1342,9 +1343,13 @@
   function applyFilters(){
     const q = searchInput.value.trim().toLowerCase();
 
+    const today = new Date(); today.setHours(0,0,0,0);
+
     filtered = allProducts.filter(p => {
       const shop = (p.shop||'').toLowerCase();
       if(BLOCKED_SHOPS.some(b => shop.includes(b))) return false;
+      // skryť expirované položky
+      if(p.validTo && new Date(p.validTo) < today) return false;
       if(activeShop && shop !== activeShop) return false;
       if(q){
         const hay = (p.name + ' ' + (p.description||'')).toLowerCase();
@@ -1813,9 +1818,13 @@ function addBtn(containerId, label, url){
       const data = await res.json();
       const leaflets = Array.isArray(data) ? data : (data.leaflets || []);
 
+      // filtrovať expirované letáky
+      const today = new Date(); today.setHours(0,0,0,0);
+      const active = leaflets.filter(l => !l.validTo || new Date(l.validTo) >= today);
+
       // group by shop
       const byShop = {};
-      leaflets.forEach(l => {
+      active.forEach(l => {
         if(!byShop[l.shop]) byShop[l.shop] = [];
         byShop[l.shop].push(l);
       });
