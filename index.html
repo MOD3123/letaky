@@ -746,6 +746,63 @@
     0%  { transform: translateX(-150%); }
     100%{ transform: translateX(400%); }
   }
+  /* ───────── PDF.js canvas viewer ───────── */
+  #pdfCanvasScroll{
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: auto;
+    background: #444;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px 0 40px;
+    gap: 12px;
+    scroll-behavior: smooth;
+  }
+  .pdf-page-wrapper{
+    position: relative;
+    box-shadow: 0 4px 18px rgba(0,0,0,.55);
+    border-radius: 3px;
+    overflow: hidden;
+    background: #fff;
+    flex-shrink: 0;
+  }
+  .pdf-page-wrapper canvas{
+    display: block;
+  }
+  .pdf-page-wrapper .page-placeholder{
+    /* shown before canvas is rendered */
+    background: #e8e8e8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #aaa;
+    font-size: 13px;
+    font-family: 'Roboto Mono', monospace;
+  }
+  .pdf-nav-btn{
+    font-family:'Roboto Flex', sans-serif;
+    font-size:13.5px; font-weight:700;
+    border:none; border-radius: var(--shape-full);
+    padding: 9px 16px;
+    background: var(--surface-container-high);
+    color: var(--on-surface);
+    cursor:pointer; text-decoration:none;
+    transition: background .2s var(--motion-standard);
+    display:inline-flex; align-items:center; gap:5px;
+    flex-shrink: 0;
+  }
+  .pdf-nav-btn:hover{ background: var(--surface-container-highest); }
+  .pdf-nav-btn:disabled{ opacity:.4; cursor:default; }
+  .pdf-zoom-row{
+    display:flex; align-items:center; gap:6px; flex-shrink:0;
+  }
+  .pdf-zoom-label{
+    font-family:'Roboto Mono', monospace;
+    font-size:12px; color: var(--on-surface-var);
+    min-width: 44px; text-align:center;
+  }
+
   /* error state variant */
   .pdf-viewer-status.is-error .pdf-status-icon{
     background: var(--error-container);
@@ -820,33 +877,40 @@
     position:sticky;
     top:0;
     height:100vh;
+    overflow-y:hidden; /* scroll is on .sidenav-body below */
+    transform: translateX(0);
+  }
+  /* scrollable body — excludes sticky header so scrollbar starts below it */
+  .sidenav-body{
+    flex:1;
     overflow-y:auto;
-    /* Custom scrollbar */
     scrollbar-width: thin;
     scrollbar-color: var(--outline-variant) transparent;
   }
-  .sidenav::-webkit-scrollbar{
+  .sidenav-body::-webkit-scrollbar{
     width: 5px;
   }
-  .sidenav::-webkit-scrollbar-track{
+  .sidenav-body::-webkit-scrollbar-track{
     background: transparent;
   }
-  .sidenav::-webkit-scrollbar-thumb{
+  .sidenav-body::-webkit-scrollbar-thumb{
     background: var(--outline-variant);
     border-radius: var(--shape-full);
   }
-  .sidenav::-webkit-scrollbar-thumb:hover{
+  .sidenav-body::-webkit-scrollbar-thumb:hover{
     background: var(--outline);
   }
 
   .sidenav-header{
     display:flex; align-items:center; justify-content:center;
-    padding: 20px 18px 14px;
+    padding: 16px 16px 14px;
     border-bottom: 1px solid var(--outline-variant);
-    position:sticky; top:0;
     background: var(--surface-container-low);
-    z-index:1;
-    text-align: center;
+    position:relative; /* for absolute X button */
+  }
+  .sidenav-header .brand{
+    font-size: 28px;
+    flex-shrink: 0;
   }
   .sidenav-title{
     font-family:'Google Sans Display', sans-serif;
@@ -857,10 +921,11 @@
   }
   .sidenav-close{
     display:none;
+    position:absolute; top:50%; right:14px; transform:translateY(-50%);
     width:34px; height:34px;
     border-radius:var(--shape-full);
     border:none; background:var(--surface-container-high);
-    color:var(--on-surface); cursor:pointer; font-size:18px;
+    color:var(--on-surface); cursor:pointer; font-size:15px;
     align-items:center; justify-content:center;
     transition: background .2s;
   }
@@ -911,28 +976,114 @@
     color: var(--on-primary-container);
   }
 
-  /* ───────── Mobile ───────── */
+  /* ───────── Tablet (≤ 860px) — sidenav becomes drawer ───────── */
   @media (max-width: 860px){
-    .sidenav-toggle{
-      display:flex;
-    }
+    .sidenav-toggle{ display:flex; }
     .sidenav-overlay{ display:block; }
     .sidenav-close{ display:flex; }
 
     .sidenav{
       position:fixed; top:0; left:0; bottom:0; height:100vh;
       z-index:201;
+      transform: translateX(-100%);
       transition: transform .35s var(--motion-spring);
     }
     .sidenav.open{ transform: translateX(0); }
     .sidenav-overlay.open{ opacity:1; visibility:visible; }
+
+    .header-inner{
+      padding: 10px 16px;
+      gap: 12px;
+      flex-wrap: nowrap;
+    }
+    .controls{ flex-wrap: nowrap; gap: 8px; }
+    .tagline{ display:none; }
+
+    .shop-chips{
+      padding: 0 16px;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .shop-chips::-webkit-scrollbar{ display:none; }
+    .chip{ flex-shrink:0; }
+
+    .sort-row{ padding: 0 16px; }
+    main{ padding: 14px 16px 80px; }
+    .grid, .skeleton-grid{ grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+    footer{ padding: 20px 16px 40px; }
   }
 
-  @media (max-width: 540px){
-    .brand{ font-size: 30px; }
-    .grid, .skeleton-grid{ grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+  /* ───────── Mobile (≤ 600px) ───────── */
+  @media (max-width: 600px){
+    /* Header: toggle + brand na 1. riadku, controls na 2. riadku */
+    .header-inner{
+      padding: 8px 12px;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .sidenav-toggle{ order: 1; width: 40px; height: 40px; flex-shrink: 0; }
+    .brand{ order: 2; flex: 1 1 auto; font-size: clamp(18px, 5vw, 22px); }
+    .controls{ order: 3; flex: 1 1 100%; flex-wrap: nowrap; gap: 6px; min-width: 0; }
+    .search-field{ flex: 1 1 0; min-width: 0; }
+    input[type="search"]{ height: 40px; font-size: 14px; padding: 8px 12px; }
+    select{
+      min-width: 0;
+      width: 120px;
+      flex-shrink: 0;
+      font-size: 14px;
+      padding: 8px 30px 8px 10px;
+      height: 40px;
+      background-position: right 8px center;
+    }
+
+    /* Chips — wrap namiesto horizontálneho scrollu */
+    .shop-chips{
+      padding: 0 12px;
+      flex-wrap: wrap;
+      overflow-x: visible;
+      gap: 7px;
+    }
+    .chip{ flex-shrink: 1; font-size: 12.5px; padding: 8px 14px; }
+
+    .grid, .skeleton-grid{ grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
     .price{ font-size: 19px; }
     .card-img-wrap{ border-radius: var(--shape-md) var(--shape-md) var(--shape-xs) var(--shape-xs); }
+    .card-name{ font-size: 13.5px; }
+    .card-desc{ font-size: 12px; }
+
+    /* PDF viewer bar — kompaktné riadky */
+    .pdf-viewer-bar{ flex-wrap: wrap; gap: 6px; padding: 8px 10px; }
+    .pdf-viewer-title{ flex: 1 1 100%; order: 0; font-size: 12.5px; }
+    .pdf-nav-btn{ font-size: 12.5px; padding: 8px 11px; min-height: 36px; }
+    #pdfPrevBtn{ order: 1; }
+    #pdfPageInfo{ order: 2; flex: 1; text-align: center; background: none !important; border: none !important; padding: 0 !important; font-size: 12px; }
+    #pdfNextBtn{ order: 3; }
+    .pdf-zoom-row{ order: 4; gap: 4px; }
+    #pdfDownload{ order: 5; font-size: 13px; padding: 8px 12px; }
+    #pdfClose{ order: 6; font-size: 13px; padding: 8px 12px; }
+    .pdf-zoom-label{ min-width: 36px; font-size: 11px; }
+
+    /* Väčšie tap targety v sidenav */
+    .sidenav-btn{ padding: 13px 14px; font-size: 14px; }
+
+    main{ padding: 10px 12px 80px; }
+    footer{ padding: 16px 12px 40px; font-size: 10.5px; }
+    .sort-row{ padding: 0 12px; }
+    .lightbox-close{ top: 12px; right: 12px; padding: 12px 18px; }
+    .lightbox img{ max-width: 96vw; max-height: 82vh; border-radius: var(--shape-md); }
+  }
+
+  /* ───────── Very small (≤ 380px) ───────── */
+  @media (max-width: 380px){
+    .grid, .skeleton-grid{ grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .price{ font-size: 17px; }
+    .card-body{ padding: 10px 12px 12px; }
+    .chip{ font-size: 12px; padding: 7px 11px; }
+    select{ width: 100px; }
   }
 </style>
 </head>
@@ -947,6 +1098,7 @@
     <p class="brand"><img src="data:image/png;base64,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" alt="%" style="height:0.85em;width:auto;display:block;margin-right:6px">Letáky</p>
     <button class="sidenav-close" id="sidenavClose">✕</button>
   </div>
+  <div class="sidenav-body">
   <div class="sidenav-section">
     <div id="letaky-store-list"><!-- naplnené z workera (KNIHA / PDF letáky) --></div>
   </div>
@@ -974,13 +1126,20 @@
       <button class="sidenav-btn" onclick="openLetak('https://www.billa.sk/letaky-a-akcie/billa-bonus-letak')">Billa bonus leták</button>
     </div>
   </div>
+  </div><!-- /sidenav-body -->
 </nav>
 
 <div class="main-content">
 
 <header>
   <div class="header-inner">
-    <button class="sidenav-toggle" id="sidenavToggle" aria-label="Letáky obchodov">🗂</button>
+    <button class="sidenav-toggle" id="sidenavToggle" aria-label="Letáky obchodov">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="3" y1="6" x2="21" y2="6"/>
+        <line x1="3" y1="12" x2="21" y2="12"/>
+        <line x1="3" y1="18" x2="21" y2="18"/>
+      </svg>
+    </button>
     <div class="controls">
       <div class="field search-field">
         <label for="search">Hľadať produkt</label>
@@ -1026,16 +1185,25 @@
 <div class="pdf-viewer" id="pdfViewer">
   <div class="pdf-viewer-bar">
     <span class="pdf-viewer-title" id="pdfViewerTitle">Leták</span>
+    <button class="pdf-nav-btn" id="pdfPrevBtn" disabled>◀ Pred.</button>
+    <span class="pdf-viewer-bar pdf-page-info" id="pdfPageInfo" style="background:none;border:none;padding:0;font-family:'Roboto Mono',monospace;font-size:13px;color:var(--on-surface-var);white-space:nowrap;flex-shrink:0"></span>
+    <button class="pdf-nav-btn" id="pdfNextBtn" disabled>Ďalej ▶</button>
+    <div class="pdf-zoom-row">
+      <button class="pdf-nav-btn" id="pdfZoomOut" style="padding:9px 13px">−</button>
+      <span class="pdf-zoom-label" id="pdfZoomLabel">100%</span>
+      <button class="pdf-nav-btn" id="pdfZoomIn" style="padding:9px 13px">+</button>
+    </div>
     <a id="pdfDownload" href="#" download>Stiahnuť</a>
     <button class="pdf-close" id="pdfClose">Zavrieť</button>
   </div>
-  <div class="pdf-viewer-body" id="pdfViewerBody">
+  <div class="pdf-viewer-body" id="pdfViewerBody" style="flex:1;display:flex;flex-direction:column;overflow:hidden">
     <div class="pdf-viewer-status" id="pdfViewerStatus">
       <div class="pdf-status-icon" id="pdfStatusIcon">📄</div>
       <div class="pdf-status-label" id="pdfStatusLabel">Načítavam leták</div>
       <div class="pdf-status-sub" id="pdfStatusSub">Príprava</div>
       <div class="pdf-status-bar" id="pdfStatusBar"></div>
     </div>
+    <div id="pdfCanvasScroll" style="display:none"></div>
   </div>
 </div>
 
@@ -1350,12 +1518,35 @@ function openLetak(url, title){
 
   let currentBlobUrl = null;
   const statusIcon  = document.getElementById('pdfStatusIcon');
-  const statusLabel = document.getElementById('pdfStatusLabel');
-  const statusSub   = document.getElementById('pdfStatusSub');
-  const statusBar   = document.getElementById('pdfStatusBar');
+  const statusLabel   = document.getElementById('pdfStatusLabel');
+  const statusSub     = document.getElementById('pdfStatusSub');
+  const statusBar     = document.getElementById('pdfStatusBar');
+  const canvasScroll  = document.getElementById('pdfCanvasScroll');
+  const pageInfo      = document.getElementById('pdfPageInfo');
+  const prevBtn       = document.getElementById('pdfPrevBtn');
+  const nextBtn       = document.getElementById('pdfNextBtn');
+  const zoomInBtn     = document.getElementById('pdfZoomIn');
+  const zoomOutBtn    = document.getElementById('pdfZoomOut');
+  const zoomLabel     = document.getElementById('pdfZoomLabel');
+
+  /* PDF.js CDN — versioned, worker matches */
+  const PDFJS_VERSION = '3.11.174';
+  const PDFJS_CDN     = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VERSION}`;
+
+  let pdfDoc      = null;
+  let currentPage = 1;
+  let scale       = 1.5;
+  let renderTask  = null;
+  /* rendered canvas pool — key: pageNum */
+  const pageCache = {};
+  /* wrappers array */
+  let wrappers    = [];
+  /* IntersectionObserver for lazy render */
+  let lazyObserver = null;
 
   function showStatus(icon, label, sub, isError){
     status.style.display = 'flex';
+    canvasScroll.style.display = 'none';
     status.classList.toggle('is-error', !!isError);
     statusIcon.textContent  = icon;
     statusLabel.textContent = label;
@@ -1363,50 +1554,206 @@ function openLetak(url, title){
     statusBar.style.display = isError ? 'none' : '';
   }
 
+  function hideStatus(){
+    status.style.display = 'none';
+    canvasScroll.style.display = 'flex';
+  }
+
+  function updateNav(){
+    if(!pdfDoc) return;
+    pageInfo.textContent = `${currentPage} / ${pdfDoc.numPages}`;
+    prevBtn.disabled = currentPage <= 1;
+    nextBtn.disabled = currentPage >= pdfDoc.numPages;
+  }
+
+  function scrollToPage(n){
+    const w = wrappers[n - 1];
+    if(w) w.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    currentPage = n;
+    updateNav();
+  }
+
+  /* Render a single page into its wrapper */
+  async function renderPage(pageNum){
+    if(pageCache[pageNum]) return; /* already rendered */
+    if(!pdfDoc) return;
+    pageCache[pageNum] = true; /* mark in-progress / done */
+    const page = await pdfDoc.getPage(pageNum);
+    const viewport = page.getViewport({ scale });
+    const wrapper = wrappers[pageNum - 1];
+    if(!wrapper) return;
+
+    /* Replace placeholder with canvas */
+    wrapper.innerHTML = '';
+    const canvas = document.createElement('canvas');
+    canvas.width  = viewport.width;
+    canvas.height = viewport.height;
+    wrapper.style.width  = viewport.width  + 'px';
+    wrapper.style.height = viewport.height + 'px';
+    wrapper.appendChild(canvas);
+
+    const ctx = canvas.getContext('2d');
+    await page.render({ canvasContext: ctx, viewport }).promise;
+  }
+
+  /* Build placeholder wrappers for all pages (fast, no rendering) */
+  async function buildPageWrappers(){
+    canvasScroll.innerHTML = '';
+    wrappers = [];
+    pageCache.__reset = true; /* signal new doc */
+    Object.keys(pageCache).forEach(k => delete pageCache[k]);
+
+    /* We need viewport size — get first page */
+    const firstPage = await pdfDoc.getPage(1);
+    const vp = firstPage.getViewport({ scale });
+    const W  = Math.round(vp.width);
+    const H  = Math.round(vp.height);
+
+    for(let i = 1; i <= pdfDoc.numPages; i++){
+      const wrap = document.createElement('div');
+      wrap.className = 'pdf-page-wrapper';
+      wrap.dataset.page = i;
+      /* Placeholder — correct size so scroll bar is accurate */
+      const ph = document.createElement('div');
+      ph.className = 'page-placeholder';
+      ph.style.width  = W + 'px';
+      ph.style.height = H + 'px';
+      ph.textContent  = `Strana ${i}`;
+      wrap.style.width  = W + 'px';
+      wrap.style.height = H + 'px';
+      wrap.appendChild(ph);
+      canvasScroll.appendChild(wrap);
+      wrappers.push(wrap);
+    }
+  }
+
+  /* Lazy rendering via IntersectionObserver — only renders visible ±1 pages */
+  function setupLazyObserver(){
+    if(lazyObserver) lazyObserver.disconnect();
+    lazyObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if(entry.isIntersecting){
+          const pn = parseInt(entry.target.dataset.page);
+          renderPage(pn);
+          /* also pre-render neighbours */
+          if(pn > 1) renderPage(pn - 1);
+          if(pdfDoc && pn < pdfDoc.numPages) renderPage(pn + 1);
+          /* update current page indicator */
+          currentPage = pn;
+          updateNav();
+        }
+      });
+    }, {
+      root: canvasScroll,
+      threshold: 0.1
+    });
+    wrappers.forEach(w => lazyObserver.observe(w));
+  }
+
+  /* Apply new zoom — re-render all rendered pages */
+  async function applyZoom(){
+    if(!pdfDoc) return;
+    /* Clear cache so pages re-render at new scale */
+    Object.keys(pageCache).forEach(k => delete pageCache[k]);
+    /* Rebuild wrappers (new size) */
+    await buildPageWrappers();
+    setupLazyObserver();
+    /* Restore scroll position to same page */
+    scrollToPage(currentPage);
+    zoomLabel.textContent = Math.round(scale * 100) + '%';
+  }
+
+  /* ── Load PDF.js lazily and open document ── */
+  async function loadPdfjsIfNeeded(){
+    if(window.pdfjsLib) return;
+    await new Promise((res, rej) => {
+      const s = document.createElement('script');
+      s.src = `${PDFJS_CDN}/pdf.min.js`;
+      s.onload = res; s.onerror = rej;
+      document.head.appendChild(s);
+    });
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc = `${PDFJS_CDN}/pdf.worker.min.js`;
+  }
+
   window.openPdfViewer = async function(url, title){
     titleEl.textContent = title || 'Leták';
-    body.querySelectorAll('embed').forEach(e => e.remove());
     showStatus('📄', 'Načítavam leták', 'Príprava', false);
     downloadLink.href = url;
     viewer.classList.add('open');
     document.body.style.overflow = 'hidden';
+    prevBtn.disabled = true;
+    nextBtn.disabled = true;
+    pdfDoc = null;
+    currentPage = 1;
+    scale = 1.5;
+    zoomLabel.textContent = '150%';
 
     try{
+      showStatus('📦', 'Načítavam PDF.js', 'Jeden moment…', false);
+      await loadPdfjsIfNeeded();
+
+      showStatus('📥', 'Sťahujem leták', 'Chvíľu strpenia…', false);
       const res = await fetch(url);
       if(!res.ok) throw new Error('HTTP ' + res.status);
-      showStatus('📥', 'Spracúvam PDF', 'Už len chvíľa', false);
-      const blob = await res.blob();
-      const pdfBlob = blob.type === 'application/pdf'
-        ? blob
-        : new Blob([blob], { type: 'application/pdf' });
+      const arrayBuffer = await res.arrayBuffer();
 
-      if(currentBlobUrl) URL.revokeObjectURL(currentBlobUrl);
-      currentBlobUrl = URL.createObjectURL(pdfBlob);
+      if(currentBlobUrl){ URL.revokeObjectURL(currentBlobUrl); currentBlobUrl = null; }
+      const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
+      currentBlobUrl = URL.createObjectURL(blob);
       downloadLink.href = currentBlobUrl;
 
-      const embed = document.createElement('embed');
-      embed.type = 'application/pdf';
-      embed.src = currentBlobUrl;
-      body.appendChild(embed);
-      status.style.display = 'none';
+      showStatus('🔍', 'Spracúvam strany', 'Pripravujem náhľady…', false);
+      pdfDoc = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+      await buildPageWrappers();
+      hideStatus();
+      /* Scroll to top before observer starts — ensures viewer always opens at page 1 */
+      canvasScroll.scrollTop = 0;
+      currentPage = 1;
+      updateNav();
+      setupLazyObserver();
+      /* Render first 2 pages immediately */
+      renderPage(1);
+      renderPage(2);
     }catch(err){
       showStatus('⚠️', 'Leták sa nepodarilo načítať', err.message || String(err), true);
     }
   };
 
+  /* Zoom */
+  zoomInBtn.addEventListener('click', () => {
+    if(scale >= 3) return;
+    scale = Math.min(3, +(scale + 0.25).toFixed(2));
+    applyZoom();
+  });
+  zoomOutBtn.addEventListener('click', () => {
+    if(scale <= 0.5) return;
+    scale = Math.max(0.5, +(scale - 0.25).toFixed(2));
+    applyZoom();
+  });
+
+  /* Page nav */
+  prevBtn.addEventListener('click', () => { if(currentPage > 1) scrollToPage(currentPage - 1); });
+  nextBtn.addEventListener('click', () => { if(pdfDoc && currentPage < pdfDoc.numPages) scrollToPage(currentPage + 1); });
+
   closeBtn.addEventListener('click', closeViewer);
   function closeViewer(){
     viewer.classList.remove('open');
     document.body.style.overflow = '';
-    body.querySelectorAll('embed').forEach(e => e.remove());
-    if(currentBlobUrl){
-      URL.revokeObjectURL(currentBlobUrl);
-      currentBlobUrl = null;
-    }
+    if(lazyObserver){ lazyObserver.disconnect(); lazyObserver = null; }
+    canvasScroll.innerHTML = '';
+    wrappers = [];
+    Object.keys(pageCache).forEach(k => delete pageCache[k]);
+    pdfDoc = null;
+    if(currentBlobUrl){ URL.revokeObjectURL(currentBlobUrl); currentBlobUrl = null; }
+    status.style.display = 'flex';
+    canvasScroll.style.display = 'none';
   }
   document.addEventListener('keydown', (e) => {
     if(!viewer.classList.contains('open')) return;
     if(e.key === 'Escape') closeViewer();
+    if(e.key === 'ArrowRight' || e.key === 'ArrowDown') nextBtn.click();
+    if(e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   prevBtn.click();
   });
 })();
 
