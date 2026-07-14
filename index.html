@@ -144,15 +144,20 @@
     position: sticky;
     top: 0;
     z-index: 50;
+    height: 69px;
+    display:flex;
+    align-items:center;
     background: color-mix(in srgb, var(--surface) 86%, transparent);
     backdrop-filter: blur(18px) saturate(160%);
     border-bottom: 1px solid var(--outline-variant);
+    box-sizing: border-box;
   }
 
   .header-inner{
     max-width: 100%;
+    width: 100%;
     margin: 0 auto;
-    padding: 12px 24px;
+    padding: 0 24px;
     display: flex;
     align-items: center;
     gap: 20px;
@@ -262,6 +267,142 @@
   button:focus-visible, .chip:focus-visible{
     outline: 3px solid var(--primary);
     outline-offset: 2px;
+  }
+
+  /* ───────── Obľúbené obchody (kruhové logá) ───────── */
+
+  .fav-shops-section{
+    max-width: 1280px;
+    margin: 18px auto 0;
+    padding: 0 24px;
+    position: relative;
+    z-index: 1;
+  }
+  .fav-shops-title{
+    font-family:'Google Sans Display', sans-serif;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: var(--on-surface-var);
+    margin-bottom: 12px;
+  }
+  .fav-shops-row{
+    display:flex;
+    gap: 18px;
+    overflow-x:auto;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+  .fav-shops-row::-webkit-scrollbar{ display:none; }
+  .fav-shop-circle{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap: 10px;
+    background:none;
+    border:none;
+    cursor:pointer;
+    flex-shrink:0;
+    width: 108px;
+    padding: 2px;
+  }
+  .fav-shop-circle-img{
+    width: 92px; height: 92px;
+    border-radius: 50%;
+    background: var(--surface-container-low);
+    border: 2px solid var(--outline-variant);
+    overflow:hidden;
+    display:flex; align-items:center; justify-content:center;
+    transition: transform .2s var(--motion-spring-fast), border-color .2s var(--motion-standard), box-shadow .2s var(--motion-standard);
+  }
+  .fav-shop-circle-img img{
+    width:100%; height:100%;
+    object-fit: cover;
+    display:block;
+  }
+  .fav-shop-circle:hover .fav-shop-circle-img{
+    transform: scale(1.06);
+    border-color: var(--primary);
+    box-shadow: 0 6px 16px rgba(0,0,0,.25);
+  }
+  .fav-shop-circle span{
+    font-family:'Roboto Flex', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--on-surface-var);
+    text-align:center;
+    line-height:1.2;
+  }
+
+  @media (max-width: 860px){
+    .fav-shop-circle{ width: 76px; gap: 8px; }
+    .fav-shop-circle-img{ width: 64px; height: 64px; border-width: 1.5px; }
+    .fav-shop-circle span{ font-size: 12px; }
+  }
+
+  /* ───────── Popup s letákmi obchodu ───────── */
+
+  .shop-popup-overlay{
+    position:fixed; inset:0;
+    background: color-mix(in srgb, var(--inverse-surface) 70%, transparent);
+    backdrop-filter: blur(6px);
+    display:flex; align-items:center; justify-content:center;
+    z-index: 200;
+    padding: 24px;
+    opacity:0; visibility:hidden;
+    transition: opacity .25s var(--motion-standard);
+  }
+  .shop-popup-overlay.open{ opacity:1; visibility:visible; }
+  .shop-popup{
+    background: var(--surface-container-low);
+    border-radius: var(--shape-xl);
+    width: 100%;
+    max-width: 420px;
+    max-height: 82vh;
+    display:flex; flex-direction:column;
+    overflow:hidden;
+    box-shadow: 0 24px 60px rgba(0,0,0,.45);
+    transform: translateY(12px) scale(.97);
+    transition: transform .25s var(--motion-spring);
+  }
+  .shop-popup-overlay.open .shop-popup{
+    transform: translateY(0) scale(1);
+  }
+  .shop-popup-header{
+    display:flex; align-items:center; gap:10px;
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--outline-variant);
+    flex-shrink:0;
+  }
+  .shop-popup-logo{
+    width:32px; height:32px; border-radius:50%;
+    overflow:hidden; flex-shrink:0;
+    border: 1px solid var(--outline-variant);
+  }
+  .shop-popup-logo img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .shop-popup-title{
+    font-family:'Google Sans Display', sans-serif;
+    font-size:17px; font-weight:800;
+    color: var(--on-surface);
+    flex:1;
+  }
+  .shop-popup-close{
+    background: var(--surface-container-high);
+    border:none;
+    width:32px; height:32px;
+    border-radius:50%;
+    color: var(--on-surface);
+    font-size:15px;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition: background .2s var(--motion-standard);
+    flex-shrink:0;
+  }
+  .shop-popup-close:hover{ background: var(--primary-container); color: var(--on-primary-container); }
+  .shop-popup-body{
+    padding: 14px 18px 18px;
+    overflow-y:auto;
   }
 
   .shop-chips{
@@ -903,10 +1044,12 @@
 
   .sidenav-header{
     display:flex; align-items:center; justify-content:center;
-    padding: 16px 16px 14px;
+    height: 69px;
+    padding: 0 16px;
     border-bottom: 1px solid var(--outline-variant);
     background: var(--surface-container-low);
     position:relative; /* for absolute X button */
+    box-sizing: border-box;
   }
   .sidenav-header .brand{
     font-size: 28px;
@@ -1020,6 +1163,7 @@
   /* ───────── Mobile (≤ 600px) ───────── */
   @media (max-width: 600px){
     /* Header: toggle + brand na 1. riadku, controls na 2. riadku */
+    header{ height: auto; }
     .header-inner{
       padding: 8px 12px;
       gap: 8px;
@@ -1130,6 +1274,19 @@
     </div>
   </div>
 </header>
+
+<div class="fav-shops-section">
+  <div class="fav-shops-title">Obľúbené</div>
+  <div class="fav-shops-row" id="favShopsRow">
+    <button class="fav-shop-circle" data-shop="kaufland"><span class="fav-shop-circle-img"><img src="kaufland.png" alt="Kaufland" loading="lazy"></span><span>Kaufland</span></button>
+    <button class="fav-shop-circle" data-shop="lidl"><span class="fav-shop-circle-img"><img src="lidl.png" alt="Lidl" loading="lazy"></span><span>Lidl</span></button>
+    <button class="fav-shop-circle" data-shop="tesco"><span class="fav-shop-circle-img"><img src="tesco.png" alt="Tesco" loading="lazy"></span><span>Tesco</span></button>
+    <button class="fav-shop-circle" data-shop="billa"><span class="fav-shop-circle-img"><img src="billa.png" alt="Billa" loading="lazy"></span><span>Billa</span></button>
+    <button class="fav-shop-circle" data-shop="biedronka"><span class="fav-shop-circle-img"><img src="biedronka.png" alt="Biedronka" loading="lazy"></span><span>Biedronka</span></button>
+    <button class="fav-shop-circle" data-shop="coop"><span class="fav-shop-circle-img"><img src="coop.png" alt="Coop Jednota" loading="lazy"></span><span>Coop Jednota</span></button>
+    <button class="fav-shop-circle" data-shop="terno"><span class="fav-shop-circle-img"><img src="terno.png" alt="Terno" loading="lazy"></span><span>Terno</span></button>
+  </div>
+</div>
 
 <div class="shop-chips" id="shopChips">
   <button class="chip active" data-shop="">Všetky obchody</button>
@@ -1449,6 +1606,17 @@
   load();
 })();
 </script>
+
+<div class="shop-popup-overlay" id="shopPopupOverlay">
+  <div class="shop-popup" id="shopPopup">
+    <div class="shop-popup-header">
+      <span class="shop-popup-logo" id="shopPopupLogo"><img src="" alt="" id="shopPopupLogoImg"></span>
+      <span class="shop-popup-title" id="shopPopupTitle"></span>
+      <button class="shop-popup-close" id="shopPopupClose">✕</button>
+    </div>
+    <div class="shop-popup-body" id="shopPopupBody"></div>
+  </div>
+</div>
 
 </body>
 <script>
@@ -1814,6 +1982,9 @@ function addBtn(containerId, label, url){
   const LETAKY_API  = 'https://letaky.2022vianoce.workers.dev/';
   const SCHWARZ_API = 'https://endpoints.leaflets.schwarz/v4/flyer';
 
+  let currentByShop = null; // null = ešte sa načítava
+  let openPopupShop = null;
+
   const STORE_DOTS = {
     tesco: '#ee1c2e', kaufland: '#d3000d', lidl: '#0057a8', billa: '#a51812',
     coop: '#1a7a3c', metro: '#003a70', fresh: '#ff8a00', koruna: '#7a1f1f',
@@ -1875,8 +2046,14 @@ function addBtn(containerId, label, url){
     const curWeek = getWeekNumber(today);
     const prevWeek = curWeek > 1 ? curWeek-1 : 52;
     const leaflets = [];
+    const seenMain = new Set();
+    const seenRelated = new Set();
 
-    for(const w of [curWeek, prevWeek]){
+    // Pozor: Kaufland letáky bežia štvrtok–streda, nie pondelok–nedeľa ako ISO týždeň,
+    // takže aktuálne platný leták môže patriť do "predchádzajúceho" ISO týždňa
+    // (napr. leták od štvrtka minulého týždňa je ešte platný aj tento utorok).
+    // Preto sa musia skontrolovať OBA týždne a nesmie sa skončiť po prvom náleze.
+    for(const w of [prevWeek, curWeek]){
       const id = `SK_sk_KDZ_1020_SK${padZ2(w)}-LFT`;
       try{
         const f = await fetchSchwarzFlyer(id, '1020');
@@ -1884,8 +2061,12 @@ function addBtn(containerId, label, url){
         const endDate = new Date(f.endDate);
         if(endDate < today) continue; // expirovaný
 
-        // Hlavný leták (KDZ)
-        leaflets.push({ shop:'kaufland', title: f.title, validFrom: f.offerStartDate, validTo: f.endDate, pdfUrl: f.pdfUrl, flyerUrl: f.flyerUrlAbsolute || f.homeUrl });
+        // Hlavný leták (KDZ) — dedup podľa pdfUrl/id
+        const mainKey = f.pdfUrl || id;
+        if(!seenMain.has(mainKey)){
+          seenMain.add(mainKey);
+          leaflets.push({ shop:'kaufland', title: f.title, validFrom: f.offerStartDate, validTo: f.endDate, pdfUrl: f.pdfUrl, flyerUrl: f.flyerUrlAbsolute || f.homeUrl });
+        }
 
         // Príbuzné letáky (napr. CL2) — odfiltruj letáky s platnosťou > 30 dní (napr. pol roka)
         if(Array.isArray(f.relatedFlyers)){
@@ -1895,13 +2076,26 @@ function addBtn(containerId, label, url){
             // Preskočiť letáky s platnosťou dlhšou ako 30 dní
             const rfStart = rf.startDate ? new Date(rf.startDate) : today;
             if(rfEnd && (rfEnd - rfStart) > 30 * 24 * 60 * 60 * 1000) continue;
+            // Dedup podľa pdfUrl/url, aby sa rovnaký "spotrebný tovar" leták
+            // nezobrazil viackrát (raz z prevWeek, raz z curWeek fetchu)
+            // Kľúč postavený na title+endDate (stabilné), nie na pdfUrl/url,
+            // keďže tie môžu byť podpísané URL s tokenom a líšiť sa medzi requestmi
+            const rfKey = (rf.title || '') + '|' + (rf.endDate || '') + '|' + (rf.startDate || '');
+            if(seenRelated.has(rfKey)) continue;
+            seenRelated.add(rfKey);
             const rfTitle = 'SPOTREBNÝ TOVAR ' + (rf.title || '');
             leaflets.push({ shop:'kaufland', title: rfTitle, validFrom: null, validTo: rf.endDate, pdfUrl: rf.pdfUrl, flyerUrl: rf.url });
           }
         }
-        break; // máme aktuálny, ďalej neideme
       }catch(e){ /* skúsime ďalší */ }
     }
+    // Klasické Kaufland letáky najprv, potom SPOTREBNÝ TOVAR (v rámci skupiny podľa dátumu)
+    leaflets.sort((a, b) => {
+      const aExtra = a.title.includes('SPOTREBNÝ TOVAR') ? 1 : 0;
+      const bExtra = b.title.includes('SPOTREBNÝ TOVAR') ? 1 : 0;
+      if(aExtra !== bExtra) return aExtra - bExtra;
+      return new Date(a.validTo) - new Date(b.validTo);
+    });
     return leaflets;
   }
 
@@ -1995,6 +2189,10 @@ function addBtn(containerId, label, url){
       byShop[s].push({ shop: s, title: null, validFrom: l.validFrom, validTo: l.validTo, pdfUrl: l.pdfUrl, flyerUrl: null });
     });
 
+    currentByShop = byShop;
+    // Ak je popup práve otvorený a čakal na dáta, dorenderuj ho
+    if(openPopupShop) renderShopPopupContent(openPopupShop);
+
     const SHOP_ORDER = ['kaufland','lidl','tesco','billa','coop','terno'];
     const sortedShops = Object.keys(byShop).sort((a, b) => {
       const ai = SHOP_ORDER.indexOf(a); const bi = SHOP_ORDER.indexOf(b);
@@ -2082,6 +2280,124 @@ function addBtn(containerId, label, url){
       }
     });
   }
+
+  // ───────── Popup pre "Obľúbené" kruhové logá ─────────
+
+  const shopPopupOverlay = document.getElementById('shopPopupOverlay');
+  const shopPopupTitle   = document.getElementById('shopPopupTitle');
+  const shopPopupLogoImg = document.getElementById('shopPopupLogoImg');
+  const shopPopupBody    = document.getElementById('shopPopupBody');
+  const shopPopupClose   = document.getElementById('shopPopupClose');
+
+  function renderShopPopupContent(shop){
+    if(!shopPopupBody) return;
+    shopPopupBody.innerHTML = '';
+
+    if(currentByShop === null){
+      shopPopupBody.innerHTML = `<div style="padding:10px 6px;font-size:13px;color:var(--on-surface-var)">Načítavam letáky…</div>`;
+      return;
+    }
+
+    const items = currentByShop[shop];
+    if(!items || items.length === 0){
+      shopPopupBody.innerHTML = `<div style="padding:10px 6px;font-size:13px;color:var(--on-surface-var)">Žiadne letáky</div>`;
+      return;
+    }
+
+    // Kaufland/Lidl štýl: každá položka má samostatné PDF a listovacie tlačidlo
+    const flyerStyle = (shop === 'kaufland' || shop === 'lidl' || items[0].flyerUrl);
+
+    if(flyerStyle){
+      items.forEach(l => {
+        if(l.pdfUrl){
+          const pdfBtn = document.createElement('button');
+          pdfBtn.className = 'sidenav-btn';
+          pdfBtn.textContent = `Leták ${l.title || (fmtShortYMD(l.validFrom) + ' – ' + fmtShortYMD(l.validTo))}`;
+          pdfBtn.onclick = () => openLetak(l.pdfUrl, `${shopLabel(shop)} – ${l.title || ''}`);
+          shopPopupBody.appendChild(pdfBtn);
+        }
+        if(l.flyerUrl){
+          const btn = document.createElement('button');
+          btn.className = 'sidenav-btn';
+          btn.textContent = `Listovací ${l.title || ''}`;
+          btn.onclick = () => openLetak(l.flyerUrl, `${shopLabel(shop)} – ${l.title || ''}`);
+          shopPopupBody.appendChild(btn);
+        }
+      });
+    } else {
+      items.forEach(l => {
+        const btn = document.createElement('button');
+        btn.className = 'sidenav-btn';
+        btn.textContent = `Leták (${fmtShortYMD(l.validFrom)} – ${fmtShortYMD(l.validTo)})`;
+        btn.onclick = () => openLetak(l.pdfUrl, `${shopLabel(shop)} (${fmtShortYMD(l.validFrom)} – ${fmtShortYMD(l.validTo)})`);
+        shopPopupBody.appendChild(btn);
+      });
+      // Tesco: listovacie letáky — len hypermarkety, s vypočítaným dátumom
+      if(shop === 'tesco'){
+        const now = new Date();
+        const day = now.getDay();
+        function getLastWed(d){
+          const r = new Date(d);
+          r.setDate(r.getDate() - ((r.getDay() + 4) % 7));
+          return r;
+        }
+        function fmtYMD(d){ return `${d.getFullYear()}-${padZ2(d.getMonth()+1)}-${padZ2(d.getDate())}`; }
+        const curWed = getLastWed(now);
+        const nextWed = new Date(curWed); nextWed.setDate(curWed.getDate() + 7);
+        const showNext = (day === 1 || day === 2);
+        const entries = [
+          [`Listovací – Aktuálny`, `https://www.tesco.sk/akciove-ponuky/letaky-a-katalogy/hypermarkety/tesco-letak-${fmtYMD(curWed)}/1/`],
+        ];
+        if(showNext) entries.push([
+          `Listovací – Nový`, `https://www.tesco.sk/akciove-ponuky/letaky-a-katalogy/hypermarkety/tesco-letak-${fmtYMD(nextWed)}/1/`
+        ]);
+        entries.forEach(([label, url]) => {
+          const b = document.createElement('button');
+          b.className = 'sidenav-btn';
+          b.textContent = label;
+          b.onclick = () => openLetak(url, `Tesco – ${label}`);
+          shopPopupBody.appendChild(b);
+        });
+      }
+      // Billa: pridaj listovacie letáky
+      if(shop === 'billa'){
+        [
+          ['Listovací – aktuálny leták',     'https://www.billa.sk/letaky-a-akcie/aktualny-letak'],
+          ['Listovací – budúci leták',        'https://www.billa.sk/letaky-a-akcie/buduci-letak'],
+          ['Listovací – Billa bonus leták',   'https://www.billa.sk/letaky-a-akcie/billa-bonus-letak'],
+        ].forEach(([label, url]) => {
+          const b = document.createElement('button');
+          b.className = 'sidenav-btn';
+          b.textContent = label;
+          b.onclick = () => openLetak(url, label);
+          shopPopupBody.appendChild(b);
+        });
+      }
+    }
+  }
+
+  function openShopPopup(shop){
+    openPopupShop = shop;
+    shopPopupTitle.textContent = shopLabel(shop);
+    shopPopupLogoImg.src = `${shop}.png`;
+    shopPopupLogoImg.alt = shopLabel(shop);
+    renderShopPopupContent(shop);
+    shopPopupOverlay.classList.add('open');
+  }
+  function closeShopPopup(){
+    shopPopupOverlay.classList.remove('open');
+    openPopupShop = null;
+  }
+  if(shopPopupClose) shopPopupClose.addEventListener('click', closeShopPopup);
+  if(shopPopupOverlay) shopPopupOverlay.addEventListener('click', (e) => {
+    if(e.target === shopPopupOverlay) closeShopPopup();
+  });
+  document.addEventListener('keydown', (e) => {
+    if(e.key === 'Escape' && shopPopupOverlay && shopPopupOverlay.classList.contains('open')) closeShopPopup();
+  });
+  document.querySelectorAll('.fav-shop-circle').forEach(btn => {
+    btn.addEventListener('click', () => openShopPopup(btn.dataset.shop));
+  });
 
   loadKniha();
 })();
