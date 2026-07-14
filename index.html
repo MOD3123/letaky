@@ -314,7 +314,6 @@
     border: 2px solid var(--outline-variant);
     overflow:hidden;
     display:flex; align-items:center; justify-content:center;
-    transition: transform .2s var(--motion-spring-fast), border-color .2s var(--motion-standard), box-shadow .2s var(--motion-standard);
   }
   .fav-shop-circle-img img{
     width:100%; height:100%;
@@ -322,7 +321,6 @@
     display:block;
   }
   .fav-shop-circle:hover .fav-shop-circle-img{
-    transform: scale(1.06);
     border-color: var(--primary);
     box-shadow: 0 6px 16px rgba(0,0,0,.25);
   }
@@ -363,7 +361,6 @@
     display:flex; flex-direction:column;
     overflow:hidden;
     box-shadow: 0 24px 60px rgba(0,0,0,.45);
-    transform: translateY(12px) scale(.97);
     transition: transform .25s var(--motion-spring);
   }
   .shop-popup-overlay.open .shop-popup{
